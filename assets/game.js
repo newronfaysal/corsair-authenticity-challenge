@@ -51,6 +51,8 @@
   load('real', 'assets/box-real.webp');
   load('fake', 'assets/box-fake.webp');
   load('plain', 'assets/box-plain.webp');
+  load('logo', 'assets/logo.png');
+  load('sticker', 'assets/sticker.webp');
 
   /* ---------- state ---------- */
   var S = { state: 'intro', px: null };
@@ -301,9 +303,115 @@
     var offered = caught + missedReal;
     $('sAcc').textContent = (offered ? Math.round(caught / offered * 100) : 0) + '%';
     $('sBest').textContent = best;
+    result = { score: score, rank: rk.title, message: rk.message, caught: caught, avoided: avoided, combo: bestCombo, acc: $('sAcc').textContent };
+    note('Tip: download the PNG to post on Instagram or Facebook stories.');
     $('endOv').hidden = false; $('againBtn').focus();
     say(why + ' Final score ' + score + '. ' + rk.title + '.');
   }
+
+
+  /* ---------- sharing ---------- */
+  var result = null;
+  var SH = CFG.share || {};
+  function shareUrl() { return SH.url || (location.origin + location.pathname); }
+  function shareText() {
+    return (SH.text || 'I scored {score} in the CORSAIR Authenticity Challenge!')
+      .replace('{score}', result ? result.score : 0).replace('{rank}', result ? result.rank : '');
+  }
+  function note(t) { $('shareNote').textContent = t; }
+
+  function drawBoard() {
+    var cw = 1080, ch = 1350, c = document.createElement('canvas'); c.width = cw; c.height = ch;
+    var x = c.getContext('2d');
+    var F = function (w, px) { return w + ' ' + px + 'px "Barlow Condensed", "Arial Narrow", Impact, sans-serif'; };
+    var bg = x.createLinearGradient(0, 0, 0, ch); bg.addColorStop(0, '#0b0b10'); bg.addColorStop(1, '#1a1a22');
+    x.fillStyle = bg; x.fillRect(0, 0, cw, ch);
+    var glow = x.createRadialGradient(cw * 0.8, 0, 0, cw * 0.8, 0, 700); glow.addColorStop(0, 'rgba(255,212,0,.22)'); glow.addColorStop(1, 'rgba(255,212,0,0)');
+    x.fillStyle = glow; x.fillRect(0, 0, cw, ch);
+    var rgb = x.createLinearGradient(0, 0, cw, 0);
+    ['#ff2a6d', '#ffd400', '#2ee572', '#05d9e8', '#7a5cff'].forEach(function (col, i) { rgb.addColorStop(i / 4, col); });
+    x.fillStyle = rgb; x.fillRect(0, 0, cw, 10); x.fillRect(0, ch - 10, cw, 10);
+    x.textAlign = 'center';
+    if (imgs.logo && imgs.logo.naturalWidth) { var lw = 520, lh = lw * imgs.logo.naturalHeight / imgs.logo.naturalWidth; x.drawImage(imgs.logo, (cw - lw) / 2, 70, lw, lh); }
+    x.fillStyle = '#a8a8a8'; x.font = F(700, 34); x.fillText('A U T H E N T I C I T Y   C H A L L E N G E', cw / 2, 250);
+    x.fillStyle = '#ffd400'; x.font = F(800, 340); x.fillText(String(result.score), cw / 2, 560);
+    x.fillStyle = '#a8a8a8'; x.font = F(700, 36); x.fillText('POINTS', cw / 2, 612);
+    x.fillStyle = '#fff'; x.font = F(800, 96); x.fillText(result.rank, cw / 2, 730);
+    x.fillStyle = '#2ee572'; x.font = F(700, 38);
+    wrap(x, result.message, cw / 2, 790, 820, 48);
+    var st = [['REAL RAM CAUGHT', result.caught], ['UNOFFICIAL AVOIDED', result.avoided], ['BEST COMBO', result.combo], ['ACCURACY', result.acc]];
+    st.forEach(function (s, i) {
+      var bx = 90 + (i % 2) * 450, by = 880 + Math.floor(i / 2) * 150;
+      x.fillStyle = 'rgba(255,255,255,.06)'; x.strokeStyle = '#2a2a2a'; x.lineWidth = 2;
+      rr(x, bx, by, 410, 128, 14); x.fill(); x.stroke();
+      x.textAlign = 'left'; x.fillStyle = '#a8a8a8'; x.font = F(700, 26); x.fillText(s[0], bx + 24, by + 44);
+      x.fillStyle = '#fff'; x.font = F(800, 64); x.fillText(String(s[1]), bx + 24, by + 106);
+    });
+    x.textAlign = 'center';
+    if (imgs.sticker && imgs.sticker.naturalWidth) { var sw = 120, sh = sw * imgs.sticker.naturalHeight / imgs.sticker.naturalWidth; x.drawImage(imgs.sticker, 90, 1195, sw, sh); }
+    x.textAlign = 'left'; x.fillStyle = '#ffd400'; x.font = F(800, 38);
+    x.fillText('BEFORE BUYING CORSAIR RAM,', 240, 1235); x.fillStyle = '#fff'; x.fillText('CHECK THE SMART WARRANTY STICKER', 240, 1282);
+    x.textAlign = 'center'; x.fillStyle = '#777'; x.font = F(700, 26);
+    x.fillText(shareUrl().replace(/^https?:\/\//, '') + '  ·  FAN MADE WEBSITE', cw / 2, 1328);
+    return c;
+  }
+  function rr(x, a, b, w, h, r) { x.beginPath(); x.moveTo(a + r, b); x.arcTo(a + w, b, a + w, b + h, r); x.arcTo(a + w, b + h, a, b + h, r); x.arcTo(a, b + h, a, b, r); x.arcTo(a, b, a + w, b, r); x.closePath(); }
+  function wrap(x, t, cx, y, maxW, lh) {
+    var words = String(t).split(' '), line = '';
+    words.forEach(function (w) {
+      var test = line ? line + ' ' + w : w;
+      if (x.measureText(test).width > maxW && line) { x.fillText(line, cx, y); y += lh; line = w; } else line = test;
+    });
+    x.fillText(line, cx, y);
+  }
+  function makeBlob() {
+    var fonts = document.fonts && document.fonts.load ? Promise.all([document.fonts.load('800 40px "Barlow Condensed"'), document.fonts.load('700 40px "Barlow Condensed"')]).catch(function () {}) : Promise.resolve();
+    return fonts.then(function () {
+      var c = drawBoard();
+      return new Promise(function (res) { c.toBlob(res, 'image/png'); });
+    });
+  }
+  function download() {
+    if (!result) return;
+    makeBlob().then(function (b) {
+      if (!b) return note('Could not create the image.');
+      var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'corsair-authenticity-score-' + result.score + '.png';
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+      note('Scoreboard saved. Post it on Instagram, Facebook or anywhere you like!');
+    });
+  }
+  function nativeShare() {
+    if (!result) return;
+    makeBlob().then(function (b) {
+      var file = b && new File([b], 'corsair-score.png', { type: 'image/png' });
+      var data = { title: 'CORSAIR Authenticity Challenge', text: shareText(), url: shareUrl() };
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) data.files = [file];
+      if (navigator.share) return navigator.share(data).catch(function () {});
+      note('Sharing is not supported here. Use a button below or download the PNG.');
+    });
+  }
+  function social(kind) {
+    if (!result) return;
+    var u = encodeURIComponent(shareUrl()), t = encodeURIComponent(shareText()), tags = (SH.hashtags || []).join(',');
+    var link = {
+      facebook: 'https://www.facebook.com/sharer/sharer.php?u=' + u + '&quote=' + t,
+      whatsapp: 'https://wa.me/?text=' + encodeURIComponent(shareText() + ' ' + shareUrl()),
+      x: 'https://twitter.com/intent/tweet?text=' + t + '&url=' + u + '&hashtags=' + encodeURIComponent(tags),
+      telegram: 'https://t.me/share/url?url=' + u + '&text=' + t
+    }[kind];
+    if (kind === 'copy') {
+      var txt = shareText() + ' ' + shareUrl() + (tags ? ' ' + tags.split(',').map(function (h) { return '#' + h; }).join(' ') : '');
+      if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function () { note('Text copied. Paste it with your PNG!'); }, function () { note(txt); });
+      else note(txt);
+      return;
+    }
+    window.open(link, '_blank', 'noopener,noreferrer,width=640,height=560');
+    note('Tip: download the PNG and attach it to your post.');
+  }
+  $('shareBtn').addEventListener('click', nativeShare);
+  $('dlBtn').addEventListener('click', download);
+  document.querySelectorAll('[data-soc]').forEach(function (b) { b.addEventListener('click', function () { social(b.getAttribute('data-soc')); }); });
+  if (!navigator.share) $('shareBtn').hidden = true;
 
   /* ---------- input ---------- */
   function setX(clientX) {

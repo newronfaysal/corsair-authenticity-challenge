@@ -13,6 +13,13 @@ window.CAMPAIGN_CONFIG = {
     official:   'https://www.corsair.com/'
   },
 
+  // Social sharing
+  share: {
+    url: '',  // leave '' to share the page the player is on
+    text: 'I scored {score} in the CORSAIR Authenticity Challenge ({rank})! Can you spot the real RAM? Look for the Smart Warranty sticker.',
+    hashtags: ['CORSAIR', 'AuthenticityChallenge', 'SmartWarranty']
+  },
+
   // Game rules
   game: {
     duration: 60,   // seconds per round
