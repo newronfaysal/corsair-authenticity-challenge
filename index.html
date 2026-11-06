@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CORSAIR Authenticity Challenge — Catch the Real RAM!</title>
+  <meta name="description" content="Catch the box with the official Smart Warranty sticker. Avoid the unofficial ones! Play the CORSAIR Authenticity Challenge.">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta property="og:title" content="CORSAIR Authenticity Challenge — Catch the Real RAM!">
+  <meta property="og:description" content="A 60-second arcade game: catch the official CORSAIR RAM, avoid the unofficial ones.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,700;0,800;1,800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <a class="skip" href="#game">Skip to the game</a>
+
+  <header class="site-header">
+    <div class="wrap bar">
+      <a class="brand" href="#top" aria-label="CORSAIR Authenticity Challenge">
+        <span class="logo-slot" data-logo>[ CORSAIR LOGO ]</span>
+        <span class="brand-sub">AUTHENTICITY CHALLENGE</span>
+      </a>
+      <nav aria-label="Main">
+        <a href="#game">Play</a>
+        <a href="#authenticity">Spot the sticker</a>
+      </nav>
+    </div>
+    <div class="rgb-line" aria-hidden="true"></div>
+  </header>
+
+  <main id="top">
+    <!-- ======================= HERO ======================= -->
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">CORSAIR BANGLADESH · VENGEANCE RGB DDR5</p>
+          <h1>CATCH THE <span>REAL RAM!</span></h1>
+          <p class="sub">Catch the box with the official Smart Warranty sticker. Avoid the unofficial ones!</p>
+          <div class="btn-row">
+            <a class="btn primary" id="playNow" href="#game">PLAY NOW</a>
+            <button class="btn ghost" id="howBtn" type="button">HOW TO PLAY</button>
+          </div>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <figure class="float a"><img src="assets/box-real.webp" alt="" width="360" height="418"><span class="tick ok">✔</span></figure>
+          <figure class="float b"><img src="assets/box-fake.webp" alt="" width="360" height="418"><span class="tick no">✘</span></figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= GAME ======================= -->
+    <section class="game-section" id="game" aria-labelledby="game-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="game-title">CORSAIR AUTHENTICITY CHALLENGE</h2>
+          <p>You have 60 seconds. Slide the scanner under the boxes that carry the Smart Warranty sticker.</p>
+        </div>
+
+        <div class="stage" id="stage">
+          <canvas id="gameCanvas" aria-label="Catch the Real RAM game area"></canvas>
+
+          <div class="hud" id="hud" aria-hidden="true">
+            <div class="hud-item"><span class="hud-l">SCORE</span><b id="hScore">0</b></div>
+            <div class="hud-item"><span class="hud-l">TIME</span><b id="hTime">60</b></div>
+            <div class="hud-item"><span class="hud-l">LIVES</span><b id="hLives" class="hearts">♥♥♥</b></div>
+            <div class="hud-item"><span class="hud-l">COMBO</span><b id="hCombo">x1</b></div>
+            <button class="icon-btn" id="muteBtn" type="button" aria-label="Sound on" aria-pressed="false">🔊</button>
+            <button class="icon-btn" id="pauseBtn" type="button" aria-label="Pause">❚❚</button>
+          </div>
+
+          <!-- Intro -->
+          <div class="overlay" id="introOv">
+            <div class="panel">
+              <h3>CATCH THE REAL RAM!</h3>
+              <div class="legend">
+                <div class="lg ok"><img src="assets/box-real.webp" alt="Box with the Smart Warranty sticker" width="360" height="418"><b>✔ CATCH</b><small>Has the Smart Warranty sticker</small></div>
+                <div class="lg no"><img src="assets/box-fake.webp" alt="Box without the sticker" width="360" height="418"><b>✘ AVOID</b><small>No sticker = unofficial</small></div>
+              </div>
+              <ul class="rules">
+                <li>Move the scanner with your <b>finger / mouse</b> or <b>← →</b> keys.</li>
+                <li>Official catch: <b>+10</b>. Keep a streak for bigger multipliers.</li>
+                <li>Catch an unofficial box and you lose a <b>life</b>.</li>
+              </ul>
+              <button class="btn primary big" id="playBtn" type="button">PLAY GAME</button>
+            </div>
+          </div>
+
+          <!-- Paused -->
+          <div class="overlay" id="pauseOv" hidden>
+            <div class="panel small">
+              <h3>PAUSED</h3>
+              <button class="btn primary big" id="resumeBtn" type="button">RESUME</button>
+            </div>
+          </div>
+
+          <!-- Results -->
+          <div class="overlay" id="endOv" hidden>
+            <div class="panel">
+              <p class="eyebrow" id="endWhy">TIME'S UP</p>
+              <div class="big-score" id="endScore">0</div>
+              <h3 id="endRank">ROOKIE SHOPPER</h3>
+              <p class="rank-msg" id="endMsg"></p>
+              <dl class="stats">
+                <div><dt>Real RAM caught</dt><dd id="sCaught">0</dd></div>
+                <div><dt>Unofficial avoided</dt><dd id="sAvoided">0</dd></div>
+                <div><dt>Best combo</dt><dd id="sCombo">0</dd></div>
+                <div><dt>Accuracy</dt><dd id="sAcc">0%</dd></div>
+              </dl>
+              <p class="best">Your best: <b id="sBest">0</b></p>
+              <div class="remind">
+                <img src="assets/sticker.webp" alt="The official Smart Warranty sticker" width="220" height="220">
+                <p><b>Before purchasing CORSAIR RAM, check the official Smart Warranty sticker.</b></p>
+              </div>
+              <div class="btn-row center">
+                <button class="btn primary" id="againBtn" type="button">PLAY AGAIN</button>
+                <a class="btn ghost" href="#authenticity" id="learnBtn">HOW TO SPOT IT</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="help">Touch: drag to move · Keyboard: ← → or A / D · P to pause</p>
+        <p class="sr-only" id="live" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <!-- ======================= AUTHENTICITY ======================= -->
+    <section class="auth" id="authenticity" aria-labelledby="auth-title">
+      <div class="wrap auth-grid">
+        <div class="auth-copy">
+          <p class="eyebrow">STAY SAFE · BUY OFFICIAL</p>
+          <h2 id="auth-title">Before purchasing CORSAIR RAM, check the official Smart Warranty sticker.</h2>
+          <ul class="checks">
+            <li>Look for the <b>Smart Warranty sticker</b> on the front of the box.</li>
+            <li>No sticker? Ask the seller about it before you buy.</li>
+            <li>Not sure? Confirm with an authorized dealer.</li>
+          </ul>
+          <div class="btn-row">
+            <a class="btn primary" data-link="learnMore" href="#" target="_blank" rel="noopener">LEARN MORE</a>
+            <a class="btn ghost" data-link="dealer" href="#" target="_blank" rel="noopener">FIND AN AUTHORIZED DEALER</a>
+            <a class="btn ghost" data-link="bangladesh" href="#" target="_blank" rel="noopener">VISIT CORSAIR BANGLADESH</a>
+          </div>
+        </div>
+        <div class="compare">
+          <figure class="cmp ok">
+            <img src="assets/box-real.webp" alt="CORSAIR Vengeance RGB DDR5 box with the Smart Warranty sticker" width="360" height="418" loading="lazy">
+            <figcaption><b>✔ OFFICIAL</b> Smart Warranty sticker on the box</figcaption>
+          </figure>
+          <figure class="cmp no">
+            <img src="assets/box-fake.webp" alt="CORSAIR Vengeance RGB DDR5 box without the sticker" width="360" height="418" loading="lazy">
+            <figcaption><b>✘ UNOFFICIAL</b> No Smart Warranty sticker</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="rgb-line" aria-hidden="true"></div>
+    <div class="wrap foot">
+      <div>
+        <span class="logo-slot" data-logo>[ CORSAIR LOGO ]</span>
+        <p class="foot-brand">CORSAIR AUTHENTICITY CHALLENGE · BANGLADESH</p>
+      </div>
+      <div class="foot-right">
+        <a data-link="official" href="#" target="_blank" rel="noopener">Official CORSAIR website</a>
+        <p>&copy; <span id="year"></span> CORSAIR Bangladesh campaign. CORSAIR and VENGEANCE are trademarks of their respective owner.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- How to play -->
+  <dialog id="howDlg" aria-labelledby="howTitle">
+    <h3 id="howTitle">HOW TO PLAY</h3>
+    <ol>
+      <li>Press <b>PLAY GAME</b>. Boxes of CORSAIR Vengeance RGB DDR5 fall from the top.</li>
+      <li><b>Catch</b> the boxes that have the <b>Smart Warranty sticker</b> — they are the real deal.</li>
+      <li><b>Avoid</b> boxes without the sticker. Catching one costs a life.</li>
+      <li>Catch several official boxes in a row for a <b>combo multiplier</b> (up to x5).</li>
+      <li>The round ends after 60 seconds or when you run out of lives.</li>
+    </ol>
+    <img class="how-sticker" src="assets/sticker.webp" alt="The official Smart Warranty sticker" width="110" height="110" loading="lazy">
+    <button class="btn primary" id="howClose" type="button">GOT IT</button>
+  </dialog>
+
+  <script src="assets/config.js"></script>
+  <script src="assets/game.js"></script>
+</body>
+</html>
