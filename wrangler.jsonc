@@ -1,11 +1,19 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "corsair-authenticity-challenge",
+  "main": "src/worker.js",
   "compatibility_date": "2026-11-04",
-  "observability": {
-    "enabled": true
-  },
+  "observability": { "enabled": true },
   "assets": {
-    "directory": "."
-  }
+    "directory": ".",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "corsair-leaderboard",
+      "database_id": "1d119e94-0e7f-4783-b8db-4990f781f792"
+    }
+  ]
 }

@@ -276,6 +276,7 @@
     $('introOv').hidden = true; $('endOv').hidden = true; $('pauseOv').hidden = true;
     $('hud').removeAttribute('aria-hidden');
     S.state = 'play'; last = performance.now();
+    fetchToken();
     say('Game started.');
     cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
   }
@@ -303,6 +304,7 @@
     var offered = caught + missedReal;
     $('sAcc').textContent = (offered ? Math.round(caught / offered * 100) : 0) + '%';
     $('sBest').textContent = best;
+    resetForm();
     result = { score: score, rank: rk.title, message: rk.message, caught: caught, avoided: avoided, combo: bestCombo, acc: $('sAcc').textContent };
     note('Tip: download the PNG to post on Instagram or Facebook stories.');
     $('endOv').hidden = false; $('againBtn').focus();
@@ -412,6 +414,105 @@
   $('dlBtn').addEventListener('click', download);
   document.querySelectorAll('[data-soc]').forEach(function (b) { b.addEventListener('click', function () { social(b.getAttribute('data-soc')); }); });
   if (!navigator.share) $('shareBtn').hidden = true;
+
+
+  /* ---------- leaderboard ---------- */
+  var roundToken = null, submitted = false, profile = {}, myKey = null;
+  try { profile = JSON.parse(localStorage.getItem('corsairProfile') || '{}') || {}; } catch (e) {}
+  function api(path, opt) {
+    return fetch(path, opt).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'Request failed'); return j; }); });
+  }
+  function fetchToken() {
+    roundToken = null;
+    api('/api/start').then(function (j) { roundToken = j.token; }).catch(function () {});
+  }
+  function trophy(fill, dark) {
+    return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M18 8h28v14c0 9-6 16-14 17-8-1-14-8-14-17V8z" fill="' + fill + '"/>' +
+      '<path d="M18 12H8c0 9 4 15 11 17M46 12h10c0 9-4 15-11 17" fill="none" stroke="' + fill + '" stroke-width="4" stroke-linecap="round"/>' +
+      '<rect x="28" y="38" width="8" height="8" fill="' + dark + '"/><rect x="20" y="46" width="24" height="6" rx="2" fill="' + fill + '"/>' +
+      '<rect x="16" y="52" width="32" height="5" rx="2" fill="' + dark + '"/><path d="M32 13l2.4 5 5.4.7-4 3.7 1 5.3-4.8-2.6-4.8 2.6 1-5.3-4-3.7 5.4-.7z" fill="#fff" opacity=".85"/></svg>';
+  }
+  var TROPHY = { 1: trophy('#ffd400', '#b08a00'), 2: trophy('#d5dbe2', '#7d8791'), 3: trophy('#d98c4a', '#8a5122') };
+  var STARS = { 1: '★★★', 2: '★★', 3: '★' };
+  var lbPeriod = 'week', lbLoaded = {};
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function fmtLeft(ms) {
+    var m = Math.max(0, Math.floor(ms / 60000)), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60);
+    return d ? d + 'd ' + h + 'h' : h + 'h ' + (m % 60) + 'm';
+  }
+  function renderBoard(data) {
+    var pod = $('podium'), list = $('lbList'), empty = $('lbEmpty');
+    pod.textContent = ''; list.textContent = '';
+    var es = data.entries || [];
+    $('lbMeta').textContent = data.period === 'week'
+      ? 'Weekly leaderboard · resets in ' + fmtLeft(data.resetsAt - Date.now()) + ' (Mon, Bangladesh time)'
+      : 'All-time best scores';
+    [2, 1, 3].forEach(function (rank) {
+      var e = es[rank - 1], p = el('div', 'pod r' + rank + (e ? '' : ' empty'));
+      p.insertAdjacentHTML('beforeend', TROPHY[rank]);
+      p.appendChild(el('div', 'stars', STARS[rank]));
+      p.appendChild(el('div', 'place', rank === 1 ? '1ST' : rank === 2 ? '2ND' : '3RD'));
+      p.appendChild(el('div', 'pname', e ? e.name : '—'));
+      p.appendChild(el('div', 'pscore', e ? e.score : '0'));
+      if (e) p.appendChild(el('div', 'psub', e.caught + ' caught · combo ' + e.combo));
+      pod.appendChild(p);
+    });
+    es.slice(3).forEach(function (e, i) {
+      var li = el('li'); li.appendChild(el('span', 'n', i + 4));
+      var w = el('span', 'who', e.name); w.appendChild(el('small', null, '•••' + e.tail)); li.appendChild(w);
+      li.appendChild(el('span', 'sc', e.score));
+      if (myKey && e.name + '|' + e.tail === myKey) li.className = 'me';
+      list.appendChild(li);
+    });
+    empty.hidden = es.length > 0;
+    if (!es.length) empty.textContent = data.period === 'week' ? 'No scores yet this week — be the first!' : 'No scores yet — be the first!';
+  }
+  function loadBoard(period, force) {
+    lbPeriod = period || lbPeriod;
+    document.querySelectorAll('.tabs [role=tab]').forEach(function (t) { t.setAttribute('aria-selected', t.getAttribute('data-period') === lbPeriod); });
+    if (lbLoaded[lbPeriod] && !force && Date.now() - lbLoaded[lbPeriod] < 15000) return;
+    api('/api/leaderboard?period=' + lbPeriod).then(function (d) { lbLoaded[d.period] = Date.now(); if (d.period === lbPeriod) renderBoard(d); })
+      .catch(function () { $('lbMeta').textContent = 'Leaderboard is unavailable right now.'; });
+  }
+  document.querySelectorAll('.tabs [role=tab]').forEach(function (t) {
+    t.addEventListener('click', function () { loadBoard(t.getAttribute('data-period'), true); });
+    t.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { var o = document.querySelector('.tabs [role=tab]:not([aria-selected=true])'); o.focus(); o.click(); }
+    });
+  });
+  loadBoard('week', true);
+  if (window.IntersectionObserver) new IntersectionObserver(function (en) { if (en[0].isIntersecting) loadBoard(null, false); }, { threshold: 0.2 }).observe($('leaderboard'));
+
+  function resetForm() {
+    submitted = false;
+    $('lbForm').hidden = false; $('lbDone').hidden = true;
+    $('lbName').value = profile.name || ''; $('lbPhone').value = profile.phone || ''; $('lbConsent').checked = !!profile.consent;
+    $('lbMsg').textContent = ''; $('lbMsg').className = 'lb-msg'; $('lbSubmit').disabled = false;
+  }
+  $('lbForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!result || submitted) return;
+    var msg = $('lbMsg'); msg.className = 'lb-msg';
+    var name = $('lbName').value.trim(), phone = $('lbPhone').value.trim(), consent = $('lbConsent').checked;
+    if (name.length < 2) { msg.textContent = 'Please enter your name.'; return $('lbName').focus(); }
+    if (!/^(?:\+?88)?01[3-9]\d{8}$/.test(phone.replace(/[\s\-()]/g, ''))) { msg.textContent = 'Enter a valid mobile number, e.g. 01XXXXXXXXX.'; return $('lbPhone').focus(); }
+    if (!consent) { msg.textContent = 'Please tick the consent box.'; return $('lbConsent').focus(); }
+    if (!roundToken) { msg.textContent = 'Could not verify this round (offline?). Play again to submit.'; return; }
+    $('lbSubmit').disabled = true; msg.textContent = 'Submitting…';
+    api('/api/score', { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: name, phone: phone, consent: true, token: roundToken, score: result.score, caught: result.caught, combo: result.combo }) })
+      .then(function (r) {
+        submitted = true; profile = { name: name, phone: phone, consent: true };
+        try { localStorage.setItem('corsairProfile', JSON.stringify(profile)); } catch (e2) {}
+        myKey = r.name + '|' + phone.replace(/\D/g, '').slice(-3);
+        $('lbForm').hidden = true; $('lbDone').hidden = false;
+        $('lbDoneTxt').textContent = 'Saved, ' + r.name + '! You are #' + r.weekRank + ' this week and #' + r.allRank + ' all time.';
+        say('Score submitted. Rank ' + r.weekRank + ' this week.');
+        loadBoard('week', true);
+      })
+      .catch(function (err) { $('lbSubmit').disabled = false; msg.textContent = err.message || 'Could not submit. Try again.'; });
+  });
+  $('lbViewBtn').addEventListener('click', function () { setTimeout(function () { loadBoard('week', true); }, 300); });
 
   /* ---------- input ---------- */
   function setX(clientX) {

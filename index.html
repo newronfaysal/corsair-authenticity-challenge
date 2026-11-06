@@ -24,6 +24,7 @@
       </a>
       <nav aria-label="Main">
         <a href="#game">Play</a>
+        <a href="#leaderboard">Leaderboard</a>
         <a href="#authenticity">Spot the sticker</a>
       </nav>
     </div>
@@ -86,6 +87,7 @@
                 <li>Halfway through, a <b>STICKER STORM</b> rains official boxes — <b>double points!</b></li>
               </ul>
               <button class="btn primary big" id="playBtn" type="button">PLAY GAME</button>
+              <p class="intro-lb"><a href="#leaderboard">🏆 View the weekly leaderboard</a></p>
             </div>
           </div>
 
@@ -115,6 +117,20 @@
                 <img src="assets/sticker.webp" alt="The official Smart Warranty sticker" width="220" height="217">
                 <p><b>Before purchasing CORSAIR RAM, check the official Smart Warranty sticker.</b></p>
               </div>
+              <form class="lbform" id="lbForm" novalidate>
+                <p class="share-t">JOIN THE LEADERBOARD</p>
+                <div class="fields">
+                  <label>Name<input id="lbName" name="name" type="text" maxlength="24" autocomplete="name" placeholder="Your name" required></label>
+                  <label>Mobile number<input id="lbPhone" name="phone" type="tel" inputmode="tel" maxlength="16" autocomplete="tel" placeholder="01XXXXXXXXX" required></label>
+                </div>
+                <label class="consent"><input id="lbConsent" type="checkbox"> <span>I agree to be contacted about campaign prizes. Only my name is shown publicly; my number stays private.</span></label>
+                <button class="btn primary sm" id="lbSubmit" type="submit">SUBMIT MY SCORE</button>
+                <p class="lb-msg" id="lbMsg" role="status" aria-live="polite"></p>
+              </form>
+              <div class="lbdone" id="lbDone" hidden>
+                <p id="lbDoneTxt"></p>
+                <a class="btn ghost sm" href="#leaderboard" id="lbViewBtn">VIEW LEADERBOARD</a>
+              </div>
               <div class="share" id="share">
                 <p class="share-t">SHARE YOUR SCORE</p>
                 <div class="btn-row center tight">
@@ -139,6 +155,26 @@
         </div>
         <p class="help">Touch: drag to move · Keyboard: ← → or A / D · P to pause</p>
         <p class="sr-only" id="live" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <!-- ======================= LEADERBOARD ======================= -->
+    <section class="lb" id="leaderboard" aria-labelledby="lb-title">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">CORSAIR BANGLADESH · FAN CHALLENGE</p>
+          <h2 id="lb-title">LEADERBOARD</h2>
+          <p id="lbMeta">Play a round and submit your score to climb the ranks.</p>
+        </div>
+        <div class="tabs" role="tablist" aria-label="Leaderboard period">
+          <button role="tab" id="tabWeek" aria-selected="true" aria-controls="lbPanel" data-period="week" type="button">THIS WEEK</button>
+          <button role="tab" id="tabAll" aria-selected="false" aria-controls="lbPanel" data-period="all" type="button">ALL TIME</button>
+        </div>
+        <div id="lbPanel" role="tabpanel" aria-live="polite">
+          <div class="podium" id="podium"></div>
+          <ol class="lb-list" id="lbList"></ol>
+          <p class="lb-empty" id="lbEmpty" hidden></p>
+        </div>
       </div>
     </section>
 
