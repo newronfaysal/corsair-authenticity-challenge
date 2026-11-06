@@ -3,7 +3,7 @@
 // ============================================================================
 window.CAMPAIGN_CONFIG = {
   // Path or URL of the official CORSAIR logo (SVG/PNG). Leave '' to show a labelled placeholder.
-  logoUrl: '',
+  logoUrl: 'assets/logo.png',
 
   // Where the buttons go. Replace the placeholder URLs before launch.
   links: {
@@ -16,7 +16,10 @@ window.CAMPAIGN_CONFIG = {
   // Game rules
   game: {
     duration: 60,   // seconds per round
-    lives: 3        // catching an unofficial box costs one life
+    lives: 5,       // catching an unofficial box costs one life
+    penalty: 15,    // points lost for catching an unofficial box
+    stormAt: 30,    // seconds remaining when the STICKER STORM bonus starts
+    stormLength: 9  // how long the storm lasts (all points doubled)
   },
 
   // Performance titles shown on the results screen (highest matching "min" wins).

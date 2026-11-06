@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   var CFG = window.CAMPAIGN_CONFIG || {};
-  var G = Object.assign({ duration: 60, lives: 3 }, CFG.game || {});
+  var G = Object.assign({ duration: 60, lives: 5, penalty: 15, stormAt: 30, stormLength: 9 }, CFG.game || {});
   var $ = function (id) { return document.getElementById(id); };
 
   /* ---------- config-driven page bits ---------- */
@@ -50,18 +50,19 @@
   function load(name, src) { var i = new Image(); i.src = src; imgs[name] = i; }
   load('real', 'assets/box-real.webp');
   load('fake', 'assets/box-fake.webp');
+  load('plain', 'assets/box-plain.webp');
 
   /* ---------- state ---------- */
   var S = { state: 'intro', px: null };
   var best = 0;
   try { best = +localStorage.getItem('corsairChallengeBest') || 0; } catch (e) {}
   var keys = { l: false, r: false };
-  var items, floaters, particles, score, lives, time, combo, streak, bestCombo, caught, avoided, missedReal, spawnT, shake, flash, raf, last;
+  var items, floaters, particles, score, lives, time, combo, streak, bestCombo, caught, avoided, missedReal, spawnT, shake, flash, raf, last, storm, stormDone, banner;
 
   function reset() {
     items = []; floaters = []; particles = [];
     score = 0; lives = G.lives; time = G.duration; combo = 1; streak = 0; bestCombo = 0;
-    caught = 0; avoided = 0; missedReal = 0; spawnT = 0.4; shake = 0; flash = 0;
+    caught = 0; avoided = 0; missedReal = 0; spawnT = 0.3; shake = 0; flash = 0; storm = 0; stormDone = false; banner = null;
     S.px = W / 2;
     hud();
   }
@@ -121,22 +122,31 @@
   /* ---------- spawn / difficulty ---------- */
   function difficulty() { return 1 - time / G.duration; } // 0 -> 1
   function spawn() {
-    var d = difficulty();
+    var d = difficulty(), inStorm = storm > 0;
     var bw = boxW(), bh = bw * 1.16;
-    var real = Math.random() < 0.55;
+    var real = Math.random() < (inStorm ? 0.88 : 0.5);
+    var kind = real ? 'real' : (Math.random() < 0.5 ? 'fake' : 'plain');
+    var w = kind === 'plain' ? bw * 0.78 : bw, h = kind === 'plain' ? bh * 1.05 : bh;
+    var speed = H * (0.55 + 0.45 * d) * (inStorm ? 1.25 : 1) * (0.85 + Math.random() * 0.4);
     items.push({
-      x: bw / 2 + Math.random() * (W - bw), y: -bh,
-      w: bw, h: bh, real: real,
-      vy: H * (0.30 + 0.28 * d) * (0.9 + Math.random() * 0.3),
-      rot: (Math.random() - 0.5) * 0.4, vr: (Math.random() - 0.5) * 0.8
+      x: w / 2 + Math.random() * (W - w), y: -h, w: w, h: h, real: real, kind: kind,
+      vy: speed, rot: (Math.random() - 0.5) * 0.4, vr: (Math.random() - 0.5) * 1.2
     });
-    spawnT = Math.max(0.45, 1.05 - 0.55 * d) * (0.8 + Math.random() * 0.4);
+    spawnT = inStorm ? 0.11 + Math.random() * 0.08 : Math.max(0.28, 0.72 - 0.42 * d) * (0.75 + Math.random() * 0.5);
   }
 
   /* ---------- update ---------- */
   function update(dt) {
     time -= dt;
     if (time <= 0) { time = 0; hud(); return end("TIME'S UP"); }
+
+    if (!stormDone && time <= G.stormAt) {
+      stormDone = true; storm = G.stormLength; spawnT = 0;
+      banner = { text: 'STICKER STORM!', sub: 'DOUBLE POINTS', t: 0 };
+      beep(440, 0.4, 'square', 0.06, 880); say('Sticker storm! Double points.');
+    }
+    if (storm > 0) { storm -= dt; if (storm <= 0) { storm = 0; say('Storm over.'); } }
+    if (banner) { banner.t += dt; if (banner.t > 1.8) banner = null; }
 
     var kx = (keys.r ? 1 : 0) - (keys.l ? 1 : 0);
     if (kx) S.px += kx * W * 1.1 * dt;
@@ -153,13 +163,14 @@
       if (bottom >= py && bottom <= py + PAD_H + it.vy * dt + 6 && Math.abs(it.x - S.px) < half + it.w * 0.3) {
         items.splice(i, 1);
         if (it.real) {
-          streak++; combo = Math.min(5, 1 + Math.floor(streak / 4));
+          streak++; combo = Math.min(5, 1 + Math.floor(streak / 3));
           bestCombo = Math.max(bestCombo, streak);
-          var pts = 10 * combo; score += pts; caught++;
+          var pts = 10 * combo * (storm > 0 ? 2 : 1); score += pts; caught++;
           pop(it.x, py - 20, '+' + pts, '#2ee572'); burst(it.x, py, '#2ee572', 14); sfx.good(combo);
         } else {
           lives--; streak = 0; combo = 1; shake = 0.35; flash = 0.35;
-          pop(it.x, py - 20, 'UNOFFICIAL!', '#ff3b4e'); burst(it.x, py, '#ff3b4e', 18); sfx.bad();
+          score = Math.max(0, score - G.penalty);
+          pop(it.x, py - 20, '-' + G.penalty + ' UNOFFICIAL!', '#ff3b4e'); burst(it.x, py, '#ff3b4e', 18); sfx.bad();
           say('Unofficial box caught. ' + lives + ' lives left.');
           if (lives <= 0) { hud(); return end('OUT OF LIVES'); }
         }
@@ -192,9 +203,16 @@
     for (var gy = -40 + off; gy < H; gy += 40) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
     for (var gx = 0; gx < W; gx += 40) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke(); }
 
+    if (storm > 0) {
+      var sg = ctx.createLinearGradient(0, 0, W, 0);
+      ['#ff2a6d', '#ffd400', '#2ee572', '#05d9e8', '#7a5cff'].forEach(function (c, i) { sg.addColorStop(i / 4, c); });
+      ctx.globalAlpha = 0.10 + 0.06 * Math.sin(performance.now() / 80); ctx.fillStyle = sg; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+      ctx.fillStyle = '#ffd400'; ctx.font = '800 14px Barlow Condensed, Arial, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('STORM x2  ' + Math.ceil(storm) + 's', W / 2, 58);
+    }
     // items
     items.forEach(function (it) {
-      var im = imgs[it.real ? 'real' : 'fake'];
+      var im = imgs[it.kind];
       ctx.save(); ctx.translate(it.x, it.y); ctx.rotate(it.rot);
       if (im && im.complete && im.naturalWidth) ctx.drawImage(im, -it.w / 2, -it.h / 2, it.w, it.h);
       else { ctx.fillStyle = '#ffd400'; ctx.fillRect(-it.w / 2, -it.h / 2, it.w, it.h); }
@@ -225,6 +243,17 @@
       ctx.globalAlpha = Math.max(0, 1 - f.t / 0.8); ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, f.y);
     });
     ctx.globalAlpha = 1;
+    if (banner) {
+      var k = banner.t / 1.8, sc = 1 + 0.25 * Math.max(0, 1 - banner.t * 5);
+      ctx.save(); ctx.globalAlpha = k > 0.75 ? Math.max(0, (1 - k) / 0.25) : 1;
+      ctx.translate(W / 2, H * 0.4); ctx.scale(sc, sc); ctx.textAlign = 'center';
+      ctx.lineWidth = 6; ctx.strokeStyle = '#000'; ctx.fillStyle = '#ffd400';
+      ctx.font = '800 ' + Math.round(W * 0.12) + 'px Barlow Condensed, Arial, sans-serif';
+      ctx.strokeText(banner.text, 0, 0); ctx.fillText(banner.text, 0, 0);
+      ctx.font = '800 ' + Math.round(W * 0.06) + 'px Barlow Condensed, Arial, sans-serif'; ctx.fillStyle = '#2ee572';
+      ctx.strokeText(banner.sub, 0, W * 0.08); ctx.fillText(banner.sub, 0, W * 0.08);
+      ctx.restore();
+    }
     if (flash > 0) { ctx.fillStyle = 'rgba(255,59,78,' + (flash * 0.8) + ')'; ctx.fillRect(-20, -20, W + 40, H + 40); }
     ctx.restore();
   }

@@ -64,7 +64,7 @@
           <div class="hud" id="hud" aria-hidden="true">
             <div class="hud-item"><span class="hud-l">SCORE</span><b id="hScore">0</b></div>
             <div class="hud-item"><span class="hud-l">TIME</span><b id="hTime">60</b></div>
-            <div class="hud-item"><span class="hud-l">LIVES</span><b id="hLives" class="hearts">♥♥♥</b></div>
+            <div class="hud-item"><span class="hud-l">LIVES</span><b id="hLives" class="hearts">♥♥♥♥♥</b></div>
             <div class="hud-item"><span class="hud-l">COMBO</span><b id="hCombo">x1</b></div>
             <button class="icon-btn" id="muteBtn" type="button" aria-label="Sound on" aria-pressed="false">🔊</button>
             <button class="icon-btn" id="pauseBtn" type="button" aria-label="Pause">❚❚</button>
@@ -77,11 +77,13 @@
               <div class="legend">
                 <div class="lg ok"><img src="assets/box-real.webp" alt="Box with the Smart Warranty sticker" width="360" height="418"><b>✔ CATCH</b><small>Has the Smart Warranty sticker</small></div>
                 <div class="lg no"><img src="assets/box-fake.webp" alt="Box without the sticker" width="360" height="418"><b>✘ AVOID</b><small>No sticker = unofficial</small></div>
+                <div class="lg no"><img src="assets/box-plain.webp" alt="Another box without the sticker" width="254" height="420"><b>✘ AVOID</b><small>Also unofficial</small></div>
               </div>
               <ul class="rules">
                 <li>Move the scanner with your <b>finger / mouse</b> or <b>← →</b> keys.</li>
                 <li>Official catch: <b>+10</b>. Keep a streak for bigger multipliers.</li>
-                <li>Catch an unofficial box and you lose a <b>life</b>.</li>
+                <li>Unofficial box: <b>−15 points</b> and a <b>life</b>.</li>
+                <li>Halfway through, a <b>STICKER STORM</b> rains official boxes — <b>double points!</b></li>
               </ul>
               <button class="btn primary big" id="playBtn" type="button">PLAY GAME</button>
             </div>
@@ -110,7 +112,7 @@
               </dl>
               <p class="best">Your best: <b id="sBest">0</b></p>
               <div class="remind">
-                <img src="assets/sticker.webp" alt="The official Smart Warranty sticker" width="220" height="220">
+                <img src="assets/sticker.webp" alt="The official Smart Warranty sticker" width="220" height="217">
                 <p><b>Before purchasing CORSAIR RAM, check the official Smart Warranty sticker.</b></p>
               </div>
               <div class="btn-row center">
@@ -176,11 +178,12 @@
     <ol>
       <li>Press <b>PLAY GAME</b>. Boxes of CORSAIR Vengeance RGB DDR5 fall from the top.</li>
       <li><b>Catch</b> the boxes that have the <b>Smart Warranty sticker</b> — they are the real deal.</li>
-      <li><b>Avoid</b> boxes without the sticker. Catching one costs a life.</li>
+      <li><b>Avoid</b> boxes without the sticker. Catching one costs points and a life.</li>
       <li>Catch several official boxes in a row for a <b>combo multiplier</b> (up to x5).</li>
+      <li>At the halfway mark a <b>STICKER STORM</b> hits: catch as many official boxes as you can for <b>double points</b>.</li>
       <li>The round ends after 60 seconds or when you run out of lives.</li>
     </ol>
-    <img class="how-sticker" src="assets/sticker.webp" alt="The official Smart Warranty sticker" width="110" height="110" loading="lazy">
+    <img class="how-sticker" src="assets/sticker.webp" alt="The official Smart Warranty sticker" width="110" height="109" loading="lazy">
     <button class="btn primary" id="howClose" type="button">GOT IT</button>
   </dialog>
 
